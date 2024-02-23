@@ -15,14 +15,10 @@
 package main
 
 import (
-	_ "github.com/fatedier/frp/assets/frpc/statik"
+	_ "github.com/fatedier/frp/assets/frpc"
 	"github.com/fatedier/frp/cmd/frpc/sub"
-
-	"github.com/fatedier/golib/crypto"
 )
 
 func main() {
-	crypto.DefaultSalt = "frp"
-
 	sub.Execute()
 }
