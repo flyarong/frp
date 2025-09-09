@@ -27,11 +27,11 @@ func (f *Framework) RunProcesses(serverTemplates []string, clientTemplates []str
 	currentServerProcesses := make([]*process.Process, 0, len(serverTemplates))
 	for i := range serverTemplates {
 		path := filepath.Join(f.TempDirectory, fmt.Sprintf("frp-e2e-server-%d", i))
-		err = os.WriteFile(path, []byte(outs[i]), 0o666)
+		err = os.WriteFile(path, []byte(outs[i]), 0o600)
 		ExpectNoError(err)
 
 		if TestContext.Debug {
-			flog.Debug("[%s] %s", path, outs[i])
+			flog.Debugf("[%s] %s", path, outs[i])
 		}
 
 		p := process.NewWithEnvs(TestContext.FRPServerPath, []string{"-c", path}, f.osEnvs)
@@ -48,11 +48,11 @@ func (f *Framework) RunProcesses(serverTemplates []string, clientTemplates []str
 	for i := range clientTemplates {
 		index := i + len(serverTemplates)
 		path := filepath.Join(f.TempDirectory, fmt.Sprintf("frp-e2e-client-%d", i))
-		err = os.WriteFile(path, []byte(outs[index]), 0o666)
+		err = os.WriteFile(path, []byte(outs[index]), 0o600)
 		ExpectNoError(err)
 
 		if TestContext.Debug {
-			flog.Debug("[%s] %s", path, outs[index])
+			flog.Debugf("[%s] %s", path, outs[index])
 		}
 
 		p := process.NewWithEnvs(TestContext.FRPClientPath, []string{"-c", path}, f.osEnvs)
@@ -94,7 +94,7 @@ func (f *Framework) RunFrpc(args ...string) (*process.Process, string, error) {
 func (f *Framework) GenerateConfigFile(content string) string {
 	f.configFileIndex++
 	path := filepath.Join(f.TempDirectory, fmt.Sprintf("frp-e2e-config-%d", f.configFileIndex))
-	err := os.WriteFile(path, []byte(content), 0o666)
+	err := os.WriteFile(path, []byte(content), 0o600)
 	ExpectNoError(err)
 	return path
 }

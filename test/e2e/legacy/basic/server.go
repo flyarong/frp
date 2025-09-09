@@ -1,13 +1,13 @@
 package basic
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strconv"
 
 	"github.com/onsi/ginkgo/v2"
 
-	clientsdk "github.com/fatedier/frp/pkg/sdk/client"
 	"github.com/fatedier/frp/test/e2e/framework"
 	"github.com/fatedier/frp/test/e2e/framework/consts"
 	"github.com/fatedier/frp/test/e2e/pkg/port"
@@ -99,10 +99,10 @@ var _ = ginkgo.Describe("[Feature: Server Manager]", func() {
 
 		f.RunProcesses([]string{serverConf}, []string{clientConf})
 
-		client := clientsdk.New("127.0.0.1", adminPort)
+		client := f.APIClientForFrpc(adminPort)
 
 		// tcp random port
-		status, err := client.GetProxyStatus("tcp")
+		status, err := client.GetProxyStatus(context.Background(), "tcp")
 		framework.ExpectNoError(err)
 
 		_, portStr, err := net.SplitHostPort(status.RemoteAddr)
@@ -113,7 +113,7 @@ var _ = ginkgo.Describe("[Feature: Server Manager]", func() {
 		framework.NewRequestExpect(f).Port(port).Ensure()
 
 		// udp random port
-		status, err = client.GetProxyStatus("udp")
+		status, err = client.GetProxyStatus(context.Background(), "udp")
 		framework.ExpectNoError(err)
 
 		_, portStr, err = net.SplitHostPort(status.RemoteAddr)

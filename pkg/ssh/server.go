@@ -105,7 +105,10 @@ func (s *TunnelServer) Run() error {
 		s.writeToClient(err.Error())
 		return fmt.Errorf("parse flags from ssh client error: %v", err)
 	}
-	clientCfg.Complete()
+	if err := clientCfg.Complete(); err != nil {
+		s.writeToClient(fmt.Sprintf("failed to complete client config: %v", err))
+		return fmt.Errorf("complete client config error: %v", err)
+	}
 	if sshConn.Permissions != nil {
 		clientCfg.User = util.EmptyOr(sshConn.Permissions.Extensions["user"], clientCfg.User)
 	}
@@ -123,7 +126,7 @@ func (s *TunnelServer) Run() error {
 			// join workConn and ssh channel
 			c, err := s.openConn(addr)
 			if err != nil {
-				log.Trace("open conn error: %v", err)
+				log.Tracef("open conn error: %v", err)
 				workConn.Close()
 				return false
 			}
@@ -167,7 +170,7 @@ func (s *TunnelServer) Run() error {
 
 	if ps, err := s.waitProxyStatusReady(pc.GetBaseConfig().Name, time.Second); err != nil {
 		s.writeToClient(err.Error())
-		log.Warn("wait proxy status ready error: %v", err)
+		log.Warnf("wait proxy status ready error: %v", err)
 	} else {
 		// success
 		s.writeToClient(createSuccessInfo(clientCfg.User, pc, ps))
@@ -175,7 +178,7 @@ func (s *TunnelServer) Run() error {
 	}
 
 	s.vc.Close()
-	log.Trace("ssh tunnel connection from %v closed", sshConn.RemoteAddr())
+	log.Tracef("ssh tunnel connection from %v closed", sshConn.RemoteAddr())
 	s.closeDoneChOnce.Do(func() {
 		_ = sshConn.Close()
 		close(s.doneCh)
@@ -363,11 +366,13 @@ func (s *TunnelServer) waitProxyStatusReady(name string, timeout time.Duration) 
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
+	statusExporter := s.vc.Service().StatusExporter()
+
 	for {
 		select {
 		case <-ticker.C:
-			ps, err := s.vc.Service().GetProxyStatus(name)
-			if err != nil {
+			ps, ok := statusExporter.GetProxyStatus(name)
+			if !ok {
 				continue
 			}
 			switch ps.Phase {
